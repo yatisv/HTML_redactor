@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Универсальный Тренажер Кода — Code Trainer (Yatis и Co.)</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" id="prism-theme-dark" disabled>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+
+<style>
+:root{
+  --code-font: 16px;
+  --left: 50%;
+  --top: 50%;
+  --mono: "JetBrains Mono", "Cascadia Code", Consolas, "DejaVu Sans Mono", "Courier New", monospace;
+  --ui: "Segoe UI", "PT Sans", Roboto, system-ui, sans-serif;
+
+  --bg:        #f3ece1;
+  --panel:     #fffdf7;
+  --head:      #f7f1e6;
+  --ink:       #2f2a24;
+  --muted:     #857a6c;
+  --line:      #e3d9c9;
+  --accent:    #2e9e5b;
+  --accent-d:  #248049;
+  --warm:      #c9772f;
+  --editor-bg: #fffdf7;
+  --editor-ink:#26313a;
+  --gutter-bg: #f6efe3;
+  --shadow: 0 6px 18px rgba(90,70,40,.10);
+}
+[data-theme="dark"]{
+  --bg:#191d23; --panel:#21262e; --head:#1b2027; --ink:#e8e6e1; --muted:#98a1ad;
+  --line:#333b45; --accent:#4cc47c; --accent-d:#3aa566; --warm:#e0a05a;
+  --editor-bg:#1b2027; --editor-ink:#e6edf3; --gutter-bg:#171b21;
+  --shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:var(--ui); color:var(--ink); background:var(--bg);
+  display:flex; flex-direction:column; overflow:hidden;
+  transition: background .3s ease, color .3s ease;
+}
+
+.topbar{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:10px 14px; background:var(--panel);
+  border-bottom:2px solid var(--line); box-shadow:var(--shadow); z-index:5;
+}
+.logo{display:flex; align-items:center; gap:10px}
+.logo .mark{font-size:28px; animation:pop .6s ease}
+.logo h1{margin:0; font-size:17px; letter-spacing:.2px}
+.logo span{font-size:11px; color:var(--muted)}
+@keyframes pop{from{transform:scale(.5) rotate(-15deg); opacity:0} to{transform:none; opacity:1}}
+
+.modes{display:flex; gap:6px; background:var(--head); padding:4px; border-radius:12px; border:1px solid var(--line)}
+.mode-btn{
+  border:0; background:transparent; color:var(--muted); font-family:var(--ui);
+  font-size:14px; font-weight:600; padding:8px 16px; border-radius:9px; cursor:pointer;
+  transition:.2s;
+}
+.mode-btn:hover{color:var(--ink)}
+.mode-btn.active{background:var(--accent); color:#fff; box-shadow:0 3px 10px rgba(46,158,91,.35)}
+
+.tools{display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap}
+
+.btn{
+  font-family:var(--ui); font-size:14px; font-weight:600; cursor:pointer;
+  padding:9px 14px; border-radius:10px; border:1px solid var(--line);
+  background:var(--head); color:var(--ink); transition:.18s;
+}
+.btn:hover{transform:translateY(-2px); box-shadow:var(--shadow)}
+.btn:active{transform:translateY(0) scale(.97)}
+.btn.primary{background:var(--accent); border-color:var(--accent-d); color:#fff}
+.btn.primary:hover{background:var(--accent-d)}
+.btn.icon{padding:9px 11px}
+
+.font-box{
+  display:flex; align-items:center; gap:4px; padding:4px;
+  background:var(--head); border:2px solid var(--warm); border-radius:12px;
+}
+.font-box .fbtn{
+  min-width:42px; border:0; border-radius:8px; cursor:pointer;
+  background:var(--panel); color:var(--ink); font-family:var(--ui);
+  font-weight:700; font-size:15px; padding:7px 10px; transition:.15s;
+}
+.font-box .fbtn:hover{background:var(--warm); color:#fff; transform:scale(1.08)}
+.font-box .fval{
+  min-width:52px; text-align:center; font-weight:700; font-size:14px; color:var(--warm);
+}
+
+select.examples{
+  font-family:var(--ui); font-size:13px; padding:9px 8px; border-radius:10px;
+  border:1px solid var(--line); background:var(--head); color:var(--ink); cursor:pointer; max-width:190px;
+}
+
+main{flex:1; min-height:0; padding:10px}
+.workspace{
+  height:100%; display:grid;
+  grid-template-columns: minmax(0,var(--left)) 9px minmax(0,1fr);
+}
+.workspace.hidden{display:none}
+
+.col{
+  display:grid;
+  grid-template-rows: minmax(0,var(--top)) 9px minmax(0,1fr);
+  gap:0; min-height:0; min-width:0;
+}
+.col.single{grid-template-rows:1fr}
+
+.pane{
+  --panel-font: var(--code-font);
+  display:flex; flex-direction:column; min-height:0; min-width:0;
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:14px; overflow:hidden; box-shadow:var(--shadow);
+}
+.pane-head{
+  display:flex; align-items:center; gap:8px;
+  padding:7px 12px; background:var(--head); border-bottom:1px solid var(--line);
+  font-size:13px; font-weight:700; letter-spacing:.3px;
+}
+.pane-head .tag{color:var(--warm)}
+.pane-head .right{margin-left:auto; display:flex; align-items:center; gap:6px}
+
+.font-local{
+  display:inline-flex; align-items:center; gap:2px;
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:8px; padding:2px;
+}
+.font-local .lbtn{
+  border:0; background:transparent; color:var(--muted); cursor:pointer;
+  font-family:var(--ui); font-weight:700; font-size:12px;
+  padding:3px 7px; border-radius:6px; transition:.15s;
+}
+.font-local .lbtn:hover{background:var(--warm); color:#fff; transform:scale(1.1)}
+.font-local .lval{
+  min-width:38px; text-align:center; font-weight:700; font-size:11px; color:var(--warm);
+}
+
+.mini{
+  border:1px solid var(--line); background:var(--panel); color:var(--muted);
+  border-radius:7px; cursor:pointer; font-size:12px; padding:3px 8px; transition:.15s;
+}
+.mini:hover{color:var(--ink); border-color:var(--warm)}
+.chk{font-size:12px; color:var(--muted); font-weight:600; display:flex; align-items:center; gap:4px; cursor:pointer}
+
+.editor-wrap{flex:1; display:flex; min-height:0; overflow:hidden; position:relative}
+.gutter{
+  padding:10px 8px 10px 12px; text-align:right; white-space:pre; overflow:hidden;
+  font:var(--panel-font)/1.5 var(--mono);
+  color:var(--muted); background:var(--gutter-bg);
+  border-right:1px solid var(--line); user-select:none;
+}
+
+.code-container{
+  flex:1; position:relative; min-width:0; overflow:hidden;
+}
+
+pre.code-highlight{
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  margin:0; padding:10px 12px; white-space:pre; overflow:auto; tab-size:4;
+  font:var(--panel-font)/1.5 var(--mono);
+  background:var(--editor-bg); color:var(--editor-ink);
+  pointer-events:none; z-index:1;
+}
+pre.code-highlight code{
+  font:inherit; background:transparent; padding:0;
+}
+
+textarea.code{
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  width:100%; height:100%;
+  border:0; outline:0; resize:none; margin:0;
+  padding:10px 12px; white-space:pre; overflow:auto; tab-size:4;
+  font:var(--panel-font)/1.5 var(--mono);
+  background:transparent;
+  color:transparent;
+  caret-color:var(--warm);
+  z-index:2;
+}
+textarea.code::selection{background:rgba(201,119,47,.28)}
+
+pre.code-highlight[class*="language-"]{
+  background:var(--editor-bg);
+}
+
+iframe#preview{flex:1; width:100%; border:0; background:#fff}
+pre#pyOutput{
+  flex:1; margin:0; padding:12px; overflow:auto; white-space:pre-wrap; word-break:break-word;
+  font:var(--panel-font)/1.5 var(--mono); background:var(--editor-bg); color:var(--editor-ink);
+}
+pre#pyOutput .err{color:#d9534f}
+pre#pyOutput .ok{color:var(--accent)}
+pre#pyOutput .sys{color:var(--muted); font-style:italic}
+
+.splitter{cursor:col-resize; position:relative}
+.splitter::after{
+  content:""; position:absolute; inset:0 3px; border-radius:4px;
+  background:var(--line); transition:.2s;
+}
+.splitter:hover::after{background:var(--warm)}
+
+.splitter-h{cursor:row-resize; position:relative}
+.splitter-h::after{
+  content:""; position:absolute; inset:3px 0; border-radius:4px;
+  background:var(--line); transition:.2s;
+}
+.splitter-h:hover::after{background:var(--warm)}
+
+.statusbar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:7px 14px; font-size:12.5px;
+  background:var(--panel); border-top:2px solid var(--line); color:var(--muted);
+}
+#status{font-weight:600; color:var(--ink)}
+.school{margin-left:auto; font-style:italic}
+
+.overlay{
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(20,15,10,.55); backdrop-filter:blur(3px); z-index:50;
+}
+.overlay.hidden{display:none}
+.load-card{
+  background:var(--panel); color:var(--ink); padding:28px 36px; border-radius:18px;
+  text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.35); border:2px solid var(--warm);
+  animation:up .35s ease; max-width:460px;
+}
+.load-card h2{margin:14px 0 6px; font-size:19px}
+.load-card p{margin:0 0 18px; color:var(--muted); font-size:13px}
+.spinner{
+  width:52px; height:52px; margin:0 auto; border-radius:50%;
+  border:5px solid var(--line); border-top-color:var(--accent);
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes up{from{transform:translateY(20px); opacity:0} to{transform:none; opacity:1}}
+
+#toast{
+  position:fixed; left:50%; bottom:52px; transform:translate(-50%,20px);
+  background:var(--accent); color:#fff; font-weight:600; font-size:14px;
+  padding:11px 22px; border-radius:30px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+  opacity:0; pointer-events:none; transition:.3s; z-index:60;
+}
+#toast.show{opacity:1; transform:translate(-50%,0)}
+
+@media (max-width:960px){
+  body{overflow:auto}
+  .workspace{grid-template-columns:1fr; grid-template-rows:1fr 1fr; gap:10px; height:auto}
+  .splitter, .splitter-h{display:none}
+  .col{grid-template-rows:1fr 1fr; min-height:340px}
+  .pane{min-height:260px}
+  .tools{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <div class="mark">🧩</div>
+    <div>
+      <h1>Универсальный Тренажер Кода</h1>
+      <span>Code Trainer (Yatis и Co.)</span>
+    </div>
+  </div>
+
+  <div class="modes">
+    <button class="mode-btn active" data-mode="web">HTML / CSS</button>
+    <button class="mode-btn" data-mode="python">🐍 Python</button>
+  </div>
+
+  <div class="tools">
+    <div class="font-box" title="Размер шрифта во всех окнах (Ctrl + колесо мыши)">
+      <button class="fbtn" id="fontMinus" title="Уменьшить шрифт везде (Ctrl + −)">A−</button>
+      <span class="fval" id="fontVal">16 px</span>
+      <button class="fbtn" id="fontPlus" title="Увеличить шрифт везде (Ctrl + +)">A+</button>
+      <button class="fbtn" id="fontReset" title="Сбросить шрифт везде (Ctrl + 0)">↺</button>
+    </div>
+
+    <select class="examples" id="examples" title="Готовые примеры"></select>
+
+    <button class="btn icon" id="openBtn"  title="Открыть файл с компьютера">📂</button>
+    <button class="btn icon" id="downBtn"  title="Скачать работу файлом">⬇</button>
+    <button class="btn icon" id="themeBtn" title="Светлая / тёмная тема">🌙</button>
+    <button class="btn icon" id="fsBtn"    title="Полный экран (для проектора)">⛶</button>
+    <button class="btn" id="saveBtn" title="Сохранить в браузере (Ctrl + S)">💾 Сохранить</button>
+    <button class="btn primary" id="runBtn" title="Ctrl + Enter">▶ Запустить код</button>
+  </div>
+</header>
+
+<main>
+  <section class="workspace" id="webMode">
+    <div class="col">
+      <div class="pane" data-panel="html">
+        <div class="pane-head">
+          <span class="tag">&lt;/&gt;</span> HTML
+          <div class="right">
+            <div class="font-local" title="Размер шрифта только для HTML">
+              <button class="lbtn" data-local-font="-" data-panel="html">A−</button>
+              <span class="lval" data-local-val="html">16</span>
+              <button class="lbtn" data-local-font="+" data-panel="html">A+</button>
+              <button class="lbtn" data-local-font="0" data-panel="html">↺</button>
+            </div>
+            <span class="chk" id="htmlPos">строк: 0</span>
+            <button class="mini" data-clear="html">🧹 очистить</button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <div class="gutter" id="gHtml">1</div>
+          <div class="code-container">
+            <pre class="code-highlight language-markup"><code id="htmlHighlight"></code></pre>
+            <textarea class="code" id="htmlCode" wrap="off" spellcheck="false" autocomplete="off"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="splitter-h" id="splitterH" title="Тяни, чтобы изменить высоту панелей HTML и CSS"></div>
+
+      <div class="pane" data-panel="css">
+        <div class="pane-head">
+          <span class="tag">🎨</span> CSS
+          <div class="right">
+            <div class="font-local" title="Размер шрифта только для CSS">
+              <button class="lbtn" data-local-font="-" data-panel="css">A−</button>
+              <span class="lval" data-local-val="css">16</span>
+              <button class="lbtn" data-local-font="+" data-panel="css">A+</button>
+              <button class="lbtn" data-local-font="0" data-panel="css">↺</button>
+            </div>
+            <span class="chk" id="cssPos">строк: 0</span>
+            <button class="mini" data-clear="css">🧹 очистить</button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <div class="gutter" id="gCss">1</div>
+          <div class="code-container">
+            <pre class="code-highlight language-css"><code id="cssHighlight"></code></pre>
+            <textarea class="code" id="cssCode" wrap="off" spellcheck="false" autocomplete="off"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="splitter" id="splitter"></div>
+
+    <div class="col single">
+      <div class="pane">
+        <div class="pane-head">
+          <span class="tag">👁</span> Результат
+          <div class="right">
+            <label class="chk"><input type="checkbox" id="autoRun" checked> авто</label>
+            <button class="mini" id="zoomMinus" title="Уменьшить масштаб страницы">−</button>
+            <span class="chk" id="zoomVal">100%</span>
+            <button class="mini" id="zoomPlus" title="Увеличить масштаб страницы">+</button>
+          </div>
+        </div>
+        <iframe id="preview" sandbox="allow-scripts allow-modals allow-forms allow-popups"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <section class="workspace hidden" id="pythonMode">
+    <div class="col single">
+      <div class="pane" data-panel="python">
+        <div class="pane-head">
+          <span class="tag">🐍</span> Python
+          <div class="right">
+            <div class="font-local" title="Размер шрифта только для Python">
+              <button class="lbtn" data-local-font="-" data-panel="python">A−</button>
+              <span class="lval" data-local-val="python">16</span>
+              <button class="lbtn" data-local-font="+" data-panel="python">A+</button>
+              <button class="lbtn" data-local-font="0" data-panel="python">↺</button>
+            </div>
+            <span class="chk" id="pyPos">строк: 0</span>
+            <button class="mini" data-clear="python">🧹 очистить</button>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <div class="gutter" id="gPy">1</div>
+          <div class="code-container">
+            <pre class="code-highlight language-python"><code id="pyHighlight"></code></pre>
+            <textarea class="code" id="pyCode" wrap="off" spellcheck="false" autocomplete="off"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="splitter" id="splitter2"></div>
+
+    <div class="col single">
+      <div class="pane">
+        <div class="pane-head">
+          <span class="tag">🖨</span> Вывод программы
+          <div class="right"><button class="mini" id="clearOut">🧹 очистить</button></div>
+        </div>
+        <pre id="pyOutput"></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="statusbar">
+  <span id="status">💚 Готов к работе.</span>
+  <span class="chk">Подсказка: Ctrl + колесо — размер шрифта · Ctrl + Enter — запуск</span>
+  <span class="school">МКОУ Северная средняя школа / Ятис В. В. / 2026 год</span>
+</footer>
+
+<div class="overlay hidden" id="loader">
+  <div class="load-card">
+    <div class="spinner"></div>
+    <h2>⏳ Загрузка Python...</h2>
+    <p>Пожалуйста, подождите (нужен интернет, ~10 МБ)</p>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="fileInput" accept=".html,.htm,.css,.py,.txt" style="display:none">
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const KEY = 'code-trainer-yatis-2026';
+
+const DEFAULT_HTML =
+'<div class="card">\n' +
+'  <h1>Привет, 7 класс! 👋</h1>\n' +
+'  <p>Это моя первая страница в тренажёре кода.</p>\n' +
+'  <ul>\n' +
+'    <li>Я учу <b>HTML</b> — структуру страницы</li>\n' +
+'    <li>Я учу <b>CSS</b> — красоту страницы</li>\n' +
+'  </ul>\n' +
+'  <button>Нажми меня</button>\n' +
+'</div>\n';
+
+const DEFAULT_CSS =
+'body {\n' +
+'  font-family: Georgia, serif;\n' +
+'  background: #fdf6e8;\n' +
+'  padding: 20px;\n' +
+'}\n\n' +
+'.card {\n' +
+'  background: #fff;\n' +
+'  border: 2px solid #c9772f;\n' +
+'  border-radius: 16px;\n' +
+'  padding: 20px;\n' +
+'  box-shadow: 0 6px 16px rgba(0,0,0,.12);\n' +
+'}\n\n' +
+'h1 { color: #2e9e5b; }\n' +
+'li { margin: 6px 0; }\n\n' +
+'button {\n' +
+'  background: #2e9e5b;\n' +
+'  color: white;\n' +
+'  border: 0;\n' +
+'  padding: 10px 18px;\n' +
+'  border-radius: 10px;\n' +
+'  cursor: pointer;\n' +
+'}\n' +
+'button:hover { background: #248049; }\n';
+
+const DEFAULT_PY =
+'# Привет! Это тренажёр Python 🐍\n' +
+'# Нажми «▶ Запустить код» или Ctrl + Enter\n\n' +
+'name = input("Как тебя зовут? ")\n' +
+'print("Привет,", name + "!")\n\n' +
+'print("Квадраты чисел:")\n' +
+'for i in range(1, 6):\n' +
+'    print(i, "в квадрате =", i ** 2)\n';
+
+const EXAMPLES = {
+  web: [
+    {name:'📚 Примеры HTML/CSS', html:null},
+    {name:'Моя первая страница', html:DEFAULT_HTML, css:DEFAULT_CSS},
+    {name:'Пустой лист', html:'<h1>Заголовок</h1>\n<p>Абзац текста.</p>\n', css:'body {\n  font-family: Arial;\n  padding: 20px;\n}\n'},
+    {name:'Списки и картинка',
+     html:'<h2>Мои увлечения</h2>\n<ol>\n  <li>Информатика</li>\n  <li>Рисование</li>\n  <li>Футбол</li>\n</ol>\n<img src="https://picsum.photos/300/180" alt="Картинка">\n',
+     css:'body{font-family:Verdana;background:#eef6ff;padding:20px}\nli{margin:8px 0;font-size:18px}\nimg{border-radius:12px;border:4px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.2)}\n'},
+    {name:'Таблица оценок',
+     html:'<h2>Расписание</h2>\n<table>\n  <tr><th>Урок</th><th>Время</th></tr>\n  <tr><td>Информатика</td><td>9:00</td></tr>\n  <tr><td>Математика</td><td>10:00</td></tr>\n  <tr><td>История</td><td>11:00</td></tr>\n</table>\n',
+     css:'body{font-family:Arial;padding:20px;background:#fffaf0}\ntable{border-collapse:collapse;width:100%}\nth,td{border:2px solid #c9772f;padding:10px;text-align:left}\nth{background:#c9772f;color:#fff}\ntr:nth-child(even){background:#fdf1e0}\n'},
+    {name:'Карточка с анимацией',
+     html:'<div class="box">Наведи на меня!</div>\n',
+     css:'body{display:flex;justify-content:center;padding:40px;background:#222}\n.box{\n  background:#2e9e5b;color:#fff;font-family:Arial;font-size:22px;\n  padding:30px 40px;border-radius:16px;transition:.4s;cursor:pointer;\n}\n.box:hover{transform:scale(1.15) rotate(-3deg);background:#c9772f}\n'}
+  ],
+  python: [
+    {name:'📚 Примеры Python', code:null},
+    {name:'Привет, мир!', code:'print("Привет, мир!")\nprint("Меня зовут ...")\n'},
+    {name:'Ввод имени', code:'name = input("Как тебя зовут? ")\nage = input("Сколько тебе лет? ")\nprint("Привет,", name + "!")\nprint("Тебе", age, "лет.")\n'},
+    {name:'Цикл for', code:'for i in range(1, 11):\n    print("Шаг номер", i)\nprint("Готово!")\n'},
+    {name:'Таблица умножения', code:'n = int(input("Какое число умножаем? "))\nfor i in range(1, 11):\n    print(n, "*", i, "=", n * i)\n'},
+    {name:'Чётное или нечётное', code:'n = int(input("Введи число: "))\nif n % 2 == 0:\n    print("Число чётное")\nelse:\n    print("Число нечётное")\n'},
+    {name:'Угадай число', code:'import random\n\nsecret = random.randint(1, 20)\ntries = 0\nprint("Я загадал число от 1 до 20!")\n\nwhile True:\n    n = int(input("Твой вариант: "))\n    tries += 1\n    if n < secret:\n        print("Больше!")\n    elif n > secret:\n        print("Меньше!")\n    else:\n        print("Угадал за", tries, "попыток! 🎉")\n        break\n'}
+  ]
+};
+
+/* ---------- Состояние ---------- */
+let state = {
+  mode:'web',
+  fontSize:16,
+  htmlFont:16, cssFont:16, pyFont:16,
+  theme:'light', zoom:1, left:50, top:50,
+  html:DEFAULT_HTML, css:DEFAULT_CSS, python:DEFAULT_PY
+};
+
+/* Загружаем ТОЛЬКО настройки интерфейса (не код!) */
+try{
+  const raw = localStorage.getItem(KEY);
+  if(raw){
+    const saved = JSON.parse(raw);
+    state.fontSize = saved.fontSize || 16;
+    state.htmlFont = saved.htmlFont || 16;
+    state.cssFont = saved.cssFont || 16;
+    state.pyFont = saved.pyFont || 16;
+    state.theme = saved.theme || 'light';
+    state.left = saved.left || 50;
+    state.top = saved.top || 50;
+  }
+}catch(e){}
+
+const htmlCode=$('#htmlCode'), cssCode=$('#cssCode'), pyCode=$('#pyCode');
+const htmlHighlight=$('#htmlHighlight'), cssHighlight=$('#cssHighlight'), pyHighlight=$('#pyHighlight');
+const gHtml=$('#gHtml'), gCss=$('#gCss'), gPy=$('#gPy');
+const preview=$('#preview'), pyOutput=$('#pyOutput');
+
+function highlightCode(ta, codeEl, lang){
+  const text = ta.value;
+  const grammar = Prism.languages[lang];
+  if(grammar){
+    codeEl.innerHTML = Prism.highlight(text, grammar, lang);
+  }else{
+    codeEl.textContent = text;
+  }
+}
+
+function syncScroll(ta, pre){
+  pre.scrollTop = ta.scrollTop;
+  pre.scrollLeft = ta.scrollLeft;
+}
+
+const FONT_MIN = 10, FONT_MAX = 40, FONT_STEP = 2;
+
+function applyPanelFont(panel, size){
+  size = Math.min(FONT_MAX, Math.max(FONT_MIN, size));
+  const pane = document.querySelector(`.pane[data-panel="${panel}"]`);
+  if(pane) pane.style.setProperty('--panel-font', size + 'px');
+  const val = document.querySelector(`[data-local-val="${panel}"]`);
+  if(val) val.textContent = size;
+  state[panel + 'Font'] = size;
+}
+
+function applyGlobalFont(){
+  state.fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, state.fontSize));
+  ['html','css','python'].forEach(p => {
+    state[p + 'Font'] = state.fontSize;
+    applyPanelFont(p, state.fontSize);
+  });
+  $('#fontVal').textContent = state.fontSize + ' px';
+  saveSettings();
+}
+
+function fontUp(){ state.fontSize += FONT_STEP; applyGlobalFont(); toast('Шрифт везде: ' + state.fontSize + ' px'); }
+function fontDown(){ state.fontSize -= FONT_STEP; applyGlobalFont(); toast('Шрифт везде: ' + state.fontSize + ' px'); }
+function fontReset(){ state.fontSize = 16; applyGlobalFont(); toast('Шрифт везде: 16 px (обычный)'); }
+
+$('#fontPlus').onclick  = fontUp;
+$('#fontMinus').onclick = fontDown;
+$('#fontReset').onclick = fontReset;
+
+$$('[data-local-font]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const panel = btn.dataset.panel;
+    const action = btn.dataset.localFont;
+    const cur = state[panel + 'Font'] || 16;
+    let next = cur;
+    if(action === '+') next = cur + FONT_STEP;
+    else if(action === '-') next = cur - FONT_STEP;
+    else if(action === '0') next = 16;
+    applyPanelFont(panel, next);
+    saveSettings();
+    toast(panel.toUpperCase() + ': ' + next + ' px');
+  });
+});
+
+$$('.editor-wrap, #pyOutput').forEach(zone=>{
+  zone.addEventListener('wheel', e=>{
+    if(!e.ctrlKey) return;
+    e.preventDefault();
+    const pane = zone.closest('.pane[data-panel]');
+    if(pane){
+      const panel = pane.dataset.panel;
+      const cur = state[panel + 'Font'] || 16;
+      const next = cur + (e.deltaY < 0 ? FONT_STEP : -FONT_STEP);
+      applyPanelFont(panel, next);
+      state.fontSize = next;
+      $('#fontVal').textContent = next + ' px';
+    }
+    saveSettings();
+  }, {passive:false});
+});
+
+function updateGutter(ta, gutter, label){
+  const lines = ta.value.split('\n').length;
+  let s = '';
+  for(let i=1;i<=lines;i++) s += i + '\n';
+  gutter.textContent = s;
+  gutter.style.minWidth = (String(lines).length + 1.5) + 'ch';
+  gutter.scrollTop = ta.scrollTop;
+  if(label) label.textContent = 'строк: ' + lines;
+}
+
+function bindEditor(ta, gutter, label, key, spaces, codeEl, lang){
+  const refresh = ()=>{
+    updateGutter(ta, gutter, label);
+    highlightCode(ta, codeEl, lang);
+  };
+  
+  ta.addEventListener('input', ()=>{
+    refresh();
+    state[key]=ta.value;
+    scheduleAuto();
+  });
+  
+  ta.addEventListener('scroll', ()=>{
+    gutter.scrollTop = ta.scrollTop;
+    syncScroll(ta, codeEl.parentElement);
+  });
+  
+  ta.addEventListener('keydown', e=>{
+    if(e.key === 'Tab'){
+      e.preventDefault();
+      const pad = ' '.repeat(spaces);
+      const s = ta.selectionStart, en = ta.selectionEnd;
+      if(s !== en && ta.value.slice(s,en).includes('\n')){
+        const start = ta.value.lastIndexOf('\n', s-1) + 1;
+        const block = ta.value.slice(start, en);
+        const changed = e.shiftKey
+          ? block.replace(new RegExp('^ {1,'+spaces+'}','gm'),'')
+          : block.replace(/^/gm, pad);
+        ta.setRangeText(changed, start, en, 'select');
+      }else{
+        ta.setRangeText(pad, s, en, 'end');
+      }
+      refresh();
+      state[key]=ta.value;
+      scheduleAuto();
+    }
+  });
+  
+  refresh();
+}
+
+function buildDoc(withZoom){
+  const css = cssCode.value;
+  let html = htmlCode.value;
+  const zoomCss = (withZoom && state.zoom !== 1)
+    ? '<style>body{zoom:' + state.zoom + '}</style>' : '';
+  const hook = '<script>window.onerror=function(m,s,l){parent.postMessage({__ct:"error",msg:m+" (строка "+l+")"},"*");return false;};<\/script>';
+
+  if(/<html[\s>]/i.test(html)){
+    let doc = html.replace(/<\/head>/i, '<style>'+css+'</style>'+zoomCss+'</head>');
+    if(!/<\/head>/i.test(doc)) doc = '<style>'+css+'</style>'+zoomCss + doc;
+    return doc.replace(/<\/body>/i, hook+'</body>');
+  }
+  return '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8">'
+       + '<style>'+css+'</style>'+zoomCss+'</head><body>'+html+hook+'</body></html>';
+}
+
+function runWeb(){
+  preview.srcdoc = buildDoc(true);
+  setStatus('ok','💚 Страница обновлена.');
+}
+
+let autoTimer=null;
+function scheduleAuto(){
+  if(state.mode!=='web' || !$('#autoRun').checked) return;
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(runWeb, 600);
+}
+
+window.addEventListener('message', e=>{
+  if(e.data && e.data.__ct === 'error') setStatus('err','⚠ Ошибка на странице: ' + e.data.msg);
+});
+
+function applyZoom(){
+  state.zoom = Math.min(3, Math.max(.5, Math.round(state.zoom*10)/10));
+  $('#zoomVal').textContent = Math.round(state.zoom*100) + '%';
+  saveSettings();
+  runWeb();
+}
+$('#zoomPlus').onclick  = ()=>{ state.zoom += .1; applyZoom(); };
+$('#zoomMinus').onclick = ()=>{ state.zoom -= .1; applyZoom(); };
+
+const PY_URL = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+let pyodide=null, pyPromise=null;
+
+function out(text, cls){
+  const span = document.createElement('span');
+  if(cls) span.className = cls;
+  span.textContent = text;
+  pyOutput.appendChild(span);
+  pyOutput.scrollTop = pyOutput.scrollHeight;
+}
+
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=src; s.onload=res; s.onerror=()=>rej(new Error('нет сети'));
+    document.head.appendChild(s);
+  });
+}
+
+function ensurePython(){
+  if(pyodide) return Promise.resolve(pyodide);
+  if(pyPromise) return pyPromise;
+  $('#loader').classList.remove('hidden');
+  setStatus('load','⏳ Загрузка Python... Пожалуйста, подождите');
+  pyPromise = (async()=>{
+    await loadScript(PY_URL + 'pyodide.js');
+    pyodide = await loadPyodide({indexURL: PY_URL});
+    pyodide.setStdout({batched: t => out(t + '\n')});
+    pyodide.setStderr({batched: t => out(t + '\n', 'err')});
+    pyodide.setStdin({stdin: () => {
+      const v = prompt('Программа просит ввести данные:');
+      return v === null ? '' : v;
+    }});
+    return pyodide;
+  })();
+  return pyPromise.then(p=>{
+    $('#loader').classList.add('hidden');
+    setStatus('ok','💚 Python готов к работе.');
+    return p;
+  }).catch(err=>{
+    $('#loader').classList.add('hidden');
+    pyPromise = null;
+    setStatus('err','⚠ Не удалось загрузить Python. Проверьте интернет.');
+    throw err;
+  });
+}
+
+async function runPython(){
+  pyOutput.textContent = '';
+  let py;
+  try{ py = await ensurePython(); }
+  catch(e){ out('Не удалось загрузить Python. Нужен интернет.\n','err'); return; }
+  setStatus('load','⏳ Выполняю программу...');
+  const t0 = performance.now();
+  try{
+    await py.runPythonAsync(pyCode.value);
+    setStatus('ok','💚 Программа выполнена за ' + ((performance.now()-t0)/1000).toFixed(2) + ' с');
+  }catch(err){
+    out(String(err.message || err), 'err');
+    setStatus('err','⚠ Ошибка в программе. Посмотри вывод справа.');
+  }
+}
+$('#clearOut').onclick = ()=> pyOutput.textContent='';
+
+function setMode(mode){
+  state.mode = mode;
+  $$('.mode-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
+  $('#webMode').classList.toggle('hidden', mode!=='web');
+  $('#pythonMode').classList.toggle('hidden', mode!=='python');
+  fillExamples();
+  if(mode==='web') runWeb();
+  else { ensurePython().catch(()=>{}); pyCode.focus(); }
+}
+$$('.mode-btn').forEach(b=> b.onclick = ()=>setMode(b.dataset.mode));
+
+function run(){ state.mode==='web' ? runWeb() : runPython(); }
+$('#runBtn').onclick = run;
+
+/* Сохраняем ТОЛЬКО настройки интерфейса */
+function saveSettings(){
+  try{
+    localStorage.setItem(KEY, JSON.stringify({
+      fontSize: state.fontSize,
+      htmlFont: state.htmlFont,
+      cssFont: state.cssFont,
+      pyFont: state.pyFont,
+      theme: state.theme,
+      left: state.left,
+      top: state.top
+    }));
+  }catch(e){}
+}
+
+$('#saveBtn').onclick = ()=>{
+  toast('💾 Работа сохраняется автоматически при вводе');
+  setStatus('ok','💚 Подсказка: используйте «⬇» для скачивания файла');
+};
+
+$('#downBtn').onclick = ()=>{
+  let name, text, type;
+  if(state.mode==='web'){
+    name='moya_stranica.html';
+    text=buildDoc(false).replace(/<script>window\.onerror[\s\S]*?<\/script>/,'');
+    type='text/html';
+  }else{
+    name='programma.py';
+    text=pyCode.value;
+    type='text/x-python';
+  }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:type+';charset=utf-8'}));
+  a.download=name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('⬇ Файл ' + name + ' скачан');
+};
+
+$('#openBtn').onclick = ()=> $('#fileInput').click();
+$('#fileInput').onchange = e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    const text=String(r.result);
+    if(/\.(py)$/i.test(f.name)){
+      pyCode.value=text;
+      setMode('python');
+    }
+    else if(/\.(css)$/i.test(f.name)){
+      cssCode.value=text;
+      setMode('web');
+    }
+    else{
+      const styles=[...text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map(m=>m[1]).join('\n');
+      const body=text.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+      htmlCode.value = body ? body[1].trim() : text;
+      if(styles) cssCode.value = styles.trim();
+      setMode('web');
+    }
+    [
+      [htmlCode,gHtml,$('#htmlPos'),'html',htmlHighlight,'markup'],
+      [cssCode,gCss,$('#cssPos'),'css',cssHighlight,'css'],
+      [pyCode,gPy,$('#pyPos'),'python',pyHighlight,'python']
+    ].forEach(([t,g,l,k,c,lang])=>{
+      updateGutter(t,g,l);
+      highlightCode(t,c,lang);
+      state[k]=t.value;
+    });
+    runWeb();
+    toast('📂 Файл открыт: ' + f.name);
+  };
+  r.readAsText(f,'utf-8');
+  e.target.value='';
+};
+
+$$('[data-clear]').forEach(b=>{
+  b.onclick = ()=>{
+    if(!confirm('Очистить окно ' + b.dataset.clear.toUpperCase() + '?')) return;
+    const map={
+      html:[htmlCode,gHtml,$('#htmlPos'),htmlHighlight,'markup'],
+      css:[cssCode,gCss,$('#cssPos'),cssHighlight,'css'],
+      python:[pyCode,gPy,$('#pyPos'),pyHighlight,'python']
+    };
+    const [ta,g,l,c,lang]=map[b.dataset.clear];
+    ta.value='';
+    state[b.dataset.clear]='';
+    updateGutter(ta,g,l);
+    highlightCode(ta,c,lang);
+    scheduleAuto();
+    ta.focus();
+  };
+});
+
+function fillExamples(){
+  const sel=$('#examples');
+  sel.innerHTML='';
+  EXAMPLES[state.mode].forEach((ex,i)=>{
+    const o=document.createElement('option');
+    o.value=i;
+    o.textContent=ex.name;
+    sel.appendChild(o);
+  });
+}
+
+$('#examples').onchange = e=>{
+  const ex = EXAMPLES[state.mode][+e.target.value];
+  if(!ex || (ex.html===null && ex.code===null)){ return; }
+  if(!confirm('Заменить текущий код примером «' + ex.name + '»?')){
+    e.target.selectedIndex=0;
+    return;
+  }
+  if(state.mode==='web'){
+    htmlCode.value=ex.html;
+    cssCode.value=ex.css;
+    updateGutter(htmlCode,gHtml,$('#htmlPos'));
+    updateGutter(cssCode,gCss,$('#cssPos'));
+    highlightCode(htmlCode,htmlHighlight,'markup');
+    highlightCode(cssCode,cssHighlight,'css');
+    runWeb();
+  }else{
+    pyCode.value=ex.code;
+    updateGutter(pyCode,gPy,$('#pyPos'));
+    highlightCode(pyCode,pyHighlight,'python');
+  }
+  toast('📚 Пример загружен');
+  e.target.selectedIndex=0;
+};
+
+function applyTheme(){
+  document.documentElement.dataset.theme = state.theme;
+  $('#themeBtn').textContent = state.theme==='dark' ? '☀' : '🌙';
+  const darkTheme = $('#prism-theme-dark');
+  if(state.theme==='dark'){
+    darkTheme.disabled = false;
+  }else{
+    darkTheme.disabled = true;
+  }
+  saveSettings();
+}
+
+$('#themeBtn').onclick = ()=>{
+  state.theme = state.theme==='dark' ? 'light':'dark';
+  applyTheme();
+};
+
+$('#fsBtn').onclick = ()=>{
+  if(document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(()=>{});
+};
+
+function bindSplitterV(el){
+  if(!el) return;
+  el.addEventListener('pointerdown', e=>{
+    el.setPointerCapture(e.pointerId);
+    const rect = el.parentElement.getBoundingClientRect();
+    const move = ev=>{
+      let p = (ev.clientX - rect.left) / rect.width * 100;
+      state.left = Math.min(80, Math.max(20, p));
+      document.documentElement.style.setProperty('--left', state.left + '%');
+    };
+    const up = ()=>{
+      el.removeEventListener('pointermove',move);
+      el.removeEventListener('pointerup',up);
+      saveSettings();
+    };
+    el.addEventListener('pointermove',move);
+    el.addEventListener('pointerup',up);
+  });
+}
+
+function bindSplitterH(el){
+  if(!el) return;
+  el.addEventListener('pointerdown', e=>{
+    el.setPointerCapture(e.pointerId);
+    const col = el.parentElement;
+    const rect = col.getBoundingClientRect();
+    const move = ev=>{
+      let p = (ev.clientY - rect.top) / rect.height * 100;
+      state.top = Math.min(85, Math.max(15, p));
+      document.documentElement.style.setProperty('--top', state.top + '%');
+    };
+    const up = ()=>{
+      el.removeEventListener('pointermove',move);
+      el.removeEventListener('pointerup',up);
+      saveSettings();
+    };
+    el.addEventListener('pointermove',move);
+    el.addEventListener('pointerup',up);
+  });
+}
+
+bindSplitterV($('#splitter'));
+bindSplitterV($('#splitter2'));
+bindSplitterH($('#splitterH'));
+
+function setStatus(kind, text){
+  $('#status').textContent = text;
+  $('#status').style.color = kind==='err' ? '#d9534f' : (kind==='load' ? 'var(--warm)' : 'var(--ink)');
+}
+
+let toastTimer=null;
+function toast(text){
+  const t=$('#toast');
+  t.textContent=text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),1600);
+}
+
+document.addEventListener('keydown', e=>{
+  if(!(e.ctrlKey || e.metaKey)) return;
+  if(e.key==='Enter'){ e.preventDefault(); run(); }
+  else if(e.key.toLowerCase()==='s'){ e.preventDefault(); $('#saveBtn').click(); }
+  else if(e.key==='=' || e.key==='+'){ e.preventDefault(); fontUp(); }
+  else if(e.key==='-' || e.key==='_'){ e.preventDefault(); fontDown(); }
+  else if(e.key==='0'){ e.preventDefault(); fontReset(); }
+});
+
+/* =========================================================
+   СТАРТ — всегда загружаем исходный код
+   ========================================================= */
+htmlCode.value = DEFAULT_HTML;
+cssCode.value  = DEFAULT_CSS;
+pyCode.value   = DEFAULT_PY;
+
+bindEditor(htmlCode, gHtml, $('#htmlPos'), 'html', 2, htmlHighlight, 'markup');
+bindEditor(cssCode,  gCss,  $('#cssPos'),  'css',  2, cssHighlight, 'css');
+bindEditor(pyCode,   gPy,   $('#pyPos'),   'python', 4, pyHighlight, 'python');
+
+document.documentElement.style.setProperty('--left', state.left + '%');
+document.documentElement.style.setProperty('--top',  state.top  + '%');
+
+['html','css','python'].forEach(p=>{
+  applyPanelFont(p, state[p + 'Font'] || 16);
+});
+applyGlobalFont();
+applyTheme();
+$('#zoomVal').textContent = Math.round(state.zoom*100) + '%';
+setMode(state.mode);
+setStatus('ok','💚 Готов к работе.');
+</script>
+</body>
+</html>
